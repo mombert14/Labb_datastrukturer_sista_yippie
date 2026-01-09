@@ -116,11 +116,10 @@ int get_int(char *prompt)
 	printf("%s", prompt);
 	char buf[BUFSIZE];
 	fgets(buf, BUFSIZE - 1, stdin);
-	if (!isdigit(buf[0])) {
-		if (echo)
-			printf("-1\n");
-		return X;
-	}
+	//if (!isdigit(buf[0])) {
+	//	if (echo)
+	//		printf("-1\n");
+	//	return X;}
 	if (echo)
 		printf("%d\n", atoi(buf));
 	return atoi(buf);

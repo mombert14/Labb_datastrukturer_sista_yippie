@@ -39,22 +39,61 @@ double min(double a, double b)
 //--------------------------------------------------------------------------
 int Q_insert(queue Q, pnode u, int index)
 {
-	// TODO
+	Q[index] = u;
 	return 0;
 }
 int Q_is_empty(queue Q, int size)
 {
-	// TODO
+	for (int i = 0; i < size; i++)
+	{
+		if(Q[i]!=NULL)return false;
+	}
+	
 	return true;
 }
 pnode Q_extract_min(queue Q, int size)
 {
-	// TODO
+	if (Q_is_empty(Q,size) ==false)
+	{
+		int min_pos = 0;
+		pnode min;
+		for (int i = 0; i < size; i++)
+		{
+			if (Q[i])
+			{
+				min = Q[i];
+				min_pos = i;
+				break;
+			}
+			
+		}
+		for (int i = 0; i < size; i++)
+		{
+			if (Q[i])
+			{
+				if (get_d(Q[i])<get_d(min))
+				{
+					min = Q[i];
+					min_pos = i;
+				}
+			}
+		}
+		Q[min_pos] = NULL;
+		return min;
+		
+	}
+	
 	return NULL;
 }
 bool Q_exists(queue Q, int qsize, char name)
 {
-	// TODO
+	for (int i = 0; i < qsize; i++)
+	{
+		if (Q[i])
+		{
+			if (Q[i]->name == name)return true;
+		}
+	}
 	return false;
 }
 //--------------------------------------------------------------------------
@@ -65,7 +104,55 @@ bool Q_exists(queue Q, int qsize, char name)
 //--------------------------------------------------------------------------
 void dijkstra(pnode G, char s, double *d, char *e)
 {
-	// TODO
+	printf("Hej vi bara testar\n");
+	int size = node_cardinality(G);
+	init_single_source(G, s);
+	queue Q = malloc(sizeof(pnode)* size);
+	pnode curr = G;
+	for (int i = 0; i < size; i++)
+	{
+		Q[i]= curr;
+		curr = get_next(curr);
+		
+	}
+	while (!Q_is_empty(Q, size))
+    {
+        pnode u = Q_extract_min(Q, size);
+        if (u == NULL || get_d(u) == INFINITY)
+        {
+            continue;
+        }
+        pedge edge = get_edges(u);
+        while (edge != NULL)
+        {
+            pnode v = get_node(G, (*edge).to);
+            double new_dist = get_d(u) + (*edge).weight;
+            if (Q_exists(Q, size, (*edge).to) && new_dist < get_d(v))
+            {
+                set_d(v, new_dist);
+                set_pi(v, get_name(u));
+            }
+
+            edge = (*edge).next_edge;
+        }
+    }
+    curr = G;
+    while (curr != NULL)
+    {
+        int pos = name_to_pos(G, get_name(curr));
+        d[pos] = get_d(curr);
+        char p = get_pi(curr);
+        if (p == '\0')
+        {
+            e[pos] = 45; 
+        }
+        else
+        {
+            e[pos] = p;
+        }
+        curr = get_next(curr);
+    }
+    free(Q);
 }
 //--------------------------------------------------------------------------
 // Prim's algorithm - Minimum Spanning Tree generator
@@ -76,7 +163,61 @@ void dijkstra(pnode G, char s, double *d, char *e)
 //--------------------------------------------------------------------------
 void prim(pnode G, char start_node, double *d, char *e)
 {
-	// TODO
+   
+    init_single_source(G, start_node);
+    int size = node_cardinality(G);
+    queue Q = malloc(sizeof(pnode) * size);
+    pnode curr = G;
+    for (int i = 0; i < size; i++)
+    {
+        Q[i] = curr;
+        curr = get_next(curr);
+    }
+
+    while (!Q_is_empty(Q, size))
+    {
+        pnode u = Q_extract_min(Q, size);
+        if (u == NULL) break;
+
+        pedge edge = get_edges(u);
+        while (edge != NULL)
+        {
+            pnode v = get_node(G, edge->to);
+            if (Q_exists(Q, size, get_name(v)) && edge->weight < get_d(v))
+            {
+                set_d(v, edge->weight);
+                set_pi(v, get_name(u));
+            }
+            edge = edge->next_edge;
+        }
+    }
+
+    curr = G;
+    while (curr != NULL)
+    {
+        int pos = name_to_pos(G, get_name(curr));
+        if (get_name(curr) == start_node) 
+        {
+            d[pos] = INFINITY;
+        }
+        else 
+        {
+            d[pos] = get_d(curr);
+        }
+
+        char p = get_pi(curr);
+        if (p == '\0' || p == 0)
+        {
+            e[pos] = 45; 
+        }
+        else
+        {
+            e[pos] = p;
+        }
+        curr = get_next(curr);
+    }
+
+    free(Q);
 }
 
 //--------------------------------------------------------------------------
@@ -89,7 +230,57 @@ void prim(pnode G, char start_node, double *d, char *e)
 //--------------------------------------------------------------------------
 void floyd(pnode G, double W[MAXNODES][MAXNODES])
 {
-	// TODO
+    for (int i = 0; i < MAXNODES; i++)
+    {
+        for (int j = 0; j < MAXNODES; j++)
+        {
+            if (i == j)
+            {
+                W[i][j] = 0.0; 
+            }
+            else
+            {
+                W[i][j] = INFINITY; 
+			}
+        }
+    }
+
+    pnode u = G;
+    while (u != NULL)
+    {
+        int i = name_to_pos(G, get_name(u));
+        
+        pedge edge = get_edges(u);
+        while (edge != NULL)
+        {
+            int j = name_to_pos(G, edge->to);
+            if (i >= 0 && i < MAXNODES && j >= 0 && j < MAXNODES)
+            {
+                W[i][j] = edge->weight;
+            }
+            edge = edge->next_edge;
+        }
+        u = get_next(u);
+    }
+
+    int size = node_cardinality(G);
+    
+    for (int k = 0; k < size; k++)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                if (W[i][k] != INFINITY && W[k][j] != INFINITY)
+                {
+                    if (W[i][k] + W[k][j] < W[i][j])
+                    {
+                        W[i][j] = W[i][k] + W[k][j];
+                    }
+                }
+            }
+        }
+    }
 }
 //--------------------------------------------------------------------------
 // Warshall's algorithm: returns matrix of closures, i.e. if paths exists
@@ -101,5 +292,47 @@ void floyd(pnode G, double W[MAXNODES][MAXNODES])
 //--------------------------------------------------------------------------
 void warshall(pnode G, double W[MAXNODES][MAXNODES])
 {
-	// TODO
+	for (int i = 0; i < MAXNODES; i++)
+    {
+        for (int j = 0; j < MAXNODES; j++)
+        {
+            W[i][j] = 0.0;
+        }
+    }
+    pnode u = G;
+    while (u != NULL)
+    {
+        int i = name_to_pos(G, get_name(u));
+        if (i >= 0 && i < MAXNODES)
+        {
+            W[i][i] = 1.0;
+        }
+
+        pedge edge = get_edges(u);
+        while (edge != NULL)
+        {
+            int j = name_to_pos(G, edge->to);
+            if (i >= 0 && i < MAXNODES && j >= 0 && j < MAXNODES)
+            {
+                W[i][j] = 1.0; 
+            }
+            edge = edge->next_edge;
+        }
+        u = get_next(u);
+    }
+    int size = node_cardinality(G);
+    
+    for (int k = 0; k < size; k++)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                if (W[i][j] == 1.0 || (W[i][k] == 1.0 && W[k][j] == 1.0))
+                {
+                    W[i][j] = 1.0;
+                }
+            }
+        }
+    }
 }
